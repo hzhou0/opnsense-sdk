@@ -1,0 +1,26 @@
+{
+    "name": "opnsense-sdk/api-introspect",
+    "description": "Standalone OPNsense API inventory generator via runtime reflection against the opnsense submodule.",
+    "type": "project",
+    "license": "BSD-2-Clause",
+    "require": {
+        "php": ">=8.1",
+        "ext-simplexml": "*",
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "ext-json": "*",
+        "ext-ctype": "*",
+        "ext-filter": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "OpnsenseApiIntrospect\\": "src/"
+        }
+    },
+    "bin": [
+        "introspect.php"
+    ],
+    "config": {
+        "sort-packages": true
+    }
+}

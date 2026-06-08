@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<opnsense>
+  <!--
+    Minimal empty config used only so the OPNsense framework can instantiate
+    models during introspection. It carries no rows, so models resolve their
+    field tree (the schema we want) with empty collections. Do not treat this
+    as a real system configuration.
+  -->
+  <system>
+    <hostname>introspect</hostname>
+    <domain>local</domain>
+  </system>
+  <!--
+    A couple of placeholder interfaces so InterfaceField-style options resolve
+    to example values (WAN/LAN/OPT1) instead of empty enums, and so the
+    framework's interface-iteration code does not warn on a null section. These
+    are illustrative only; real option sets are deployment-specific.
+  -->
+  <interfaces>
+    <wan>
+      <enable>1</enable>
+      <if>em0</if>
+      <descr>WAN</descr>
+      <ipaddr>dhcp</ipaddr>
+    </wan>
+    <lan>
+      <enable>1</enable>
+      <if>em1</if>
+      <descr>LAN</descr>
+      <ipaddr>192.168.1.1</ipaddr>
+      <subnet>24</subnet>
+    </lan>
+    <opt1>
+      <enable>1</enable>
+      <if>em2</if>
+      <descr>OPT1</descr>
+      <ipaddr>192.168.2.1</ipaddr>
+      <subnet>24</subnet>
+    </opt1>
+  </interfaces>
+</opnsense>
