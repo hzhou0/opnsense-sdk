@@ -1,0 +1,36 @@
+{
+  "name": "@opnsense-sdk/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed TypeScript client for the OPNsense API, generated from the introspected OpenAPI spec.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../api-introspect/openapi.json --output ./src/generated/schema.d.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "docs": "scalar document serve ../api-introspect/openapi.json --watch"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@scalar/cli": "^1.9.8",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}

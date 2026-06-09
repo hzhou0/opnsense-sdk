@@ -20,7 +20,7 @@ final class ControllerDiscovery
     private const BASE_SERVICE = 'OPNsense\\Base\\ApiMutableServiceControllerBase';
     private const BASE_PLAIN = 'OPNsense\\Base\\ApiControllerBase';
 
-    public function __construct(private AppConfig $config)
+    public function __construct(private readonly AppConfig $config)
     {
     }
 
@@ -37,39 +37,67 @@ final class ControllerDiscovery
      */
     public function discover(): array
     {
+        // OPNsense has no route table or controller registry: routing is pure
+        // convention + filesystem probing. At request time the front controller
+        // (src/opnsense/www/api.php:35) builds Router('/api/', 'Api') and calls
+        // routeRequest() (Mvc/Router.php:116), which maps
+        // /api/<module>/<controller>/<action> to a class in two steps:
+        //   - parsePath()       (Mvc/Router.php:166): element 0 -> namespace,
+        //                        element 1 -> "<Controller>Controller",
+        //                        element 2 -> "<action>Action", rest -> params.
+        //   - resolveNamespace() (Mvc/Router.php:60): globs the same
+        //                        `application.controllersDir`, then stat-checks
+        //                        `<Vendor>/<Module>/Api/<Controller>.php`
+        //                        (is_file at Mvc/Router.php:97).
+        // It then dispatches the action by reflection (Dispatcher, Mvc/Router.php:137).
+        // A controller is "registered" simply by existing at that path -- that is
+        // how plugins add APIs, with no wiring.
+        //
+        // Discovery here is that exact rule run in reverse: instead of URL->file on
+        // demand, we glob file->URL for every controller. Globbing the same
+        // controllersDir is therefore canonical, not an approximation -- there is no
+        // more authoritative source. The glob mirrors the Router's structure: 1st
+        // `*` = vendor, 2nd `*` = module/namespace, `/Api/` = the 'Api' suffix.
+        // Files nested deeper are unroutable (parsePath only reads element 0/1), so
+        // we ignore them.
         $found = [];
         foreach ($this->controllerDirs() as $base) {
             // <Vendor>/<Module>/Api/<Class>Controller.php
             foreach (glob($base . '/*/*/Api/*Controller.php') ?: [] as $file) {
                 $controller = $this->reflectFile($base, $file);
-                if ($controller !== null) {
-                    $found[$controller->fqcn] = $controller;
-                }
+                $found[$controller->fqcn] = $controller;
             }
         }
         ksort($found);
         return array_values($found);
     }
 
-    private function reflectFile(string $base, string $file): ?DiscoveredController
+    /**
+     * Core-only, so these are hard invariants, not skips: a failure means upstream
+     * drifted and discovery needs refactoring. Layout + FQCN follow from the
+     * dispatch convention (a routable file must resolve to this class); the API-base
+     * check is the stronger assumption our schema extraction relies on. Thrown, not
+     * assert()ed, so they can't be compiled out via zend.assertions.
+     */
+    private function reflectFile(string $base, string $file): DiscoveredController
     {
         $rel = substr($file, strlen($base) + 1);          // Vendor/Module/Api/XController.php
         $parts = explode('/', $rel);
         if (count($parts) < 4) {
-            return null;
+            throw new \RuntimeException("Unexpected controller path layout: '{$rel}'.");
         }
         [$vendor, $module] = $parts;
         $class = basename($file, '.php');
         $fqcn = "{$vendor}\\{$module}\\Api\\{$class}";
 
         if (!class_exists($fqcn)) {
-            return null;
+            throw new \RuntimeException("Controller file '{$file}' does not define class '{$fqcn}'.");
         }
 
         $rc = new \ReflectionClass($fqcn);
         $kind = $this->classify($rc);
         if ($kind === null) {
-            return null; // not an API controller
+            throw new \RuntimeException("Controller '{$fqcn}' extends no known API base.");
         }
 
         $instantiable = $rc->isInstantiable();
@@ -77,10 +105,9 @@ final class ControllerDiscovery
 
         $actions = [];
         if (!$rc->isAbstract()) {
+            // Public *Action methods, including those inherited from the base
+            // controllers (the standard CRUD actions a subclass never redeclares).
             foreach ($rc->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-                if ($m->class !== $fqcn && !str_ends_with($m->name, 'Action')) {
-                    // keep inherited actions too, but only *Action methods
-                }
                 if (str_ends_with($m->name, 'Action')) {
                     $actions[$m->name] = $m;
                 }
@@ -89,7 +116,6 @@ final class ControllerDiscovery
 
         return new DiscoveredController(
             fqcn: $fqcn,
-            vendor: $vendor,
             module: $module,
             shortName: $class,
             kind: $kind,

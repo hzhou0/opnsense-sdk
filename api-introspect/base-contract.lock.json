@@ -1,0 +1,154 @@
+{
+    "opnsense_version": "26.7.b-18-gfa7b7a850",
+    "generated_at": "2026-06-09T03:49:48+00:00",
+    "contracts": {
+        "OPNsense\\Base\\ApiControllerBase::searchRecordsetBase": {
+            "fingerprint": "f5b47a33aa450d1fd8ecf8bb3d93f51a3133a38787c6936d370a8e4852f1cff8",
+            "params": [
+                "records",
+                "fields",
+                "defaultSort",
+                "filter_funct",
+                "sort_flags",
+                "search_clauses"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::addBase": {
+            "fingerprint": "0afb825390b8027813de1ab1dc4cf40d6a2124fb3207c65be385ef57351c4f03",
+            "params": [
+                "post_field",
+                "path",
+                "overlay"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::delBase": {
+            "fingerprint": "3a28e4bd38e6cac5b49fbabcbedb171279cf70e3a3979826526f59f81b11f1b4",
+            "params": [
+                "path",
+                "uuids"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::getAction": {
+            "fingerprint": "c5e7a4276c1617e08c5cf8f191ba8cea9ca3efefa253c71c4ad761da870fc3e0",
+            "params": []
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::getBase": {
+            "fingerprint": "80547c91ccb38820d20223b971e8f7ce3756d0cb3665ff9fcb43b3370e9cba66",
+            "params": [
+                "key_name",
+                "path",
+                "uuid"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::save": {
+            "fingerprint": "dd3e1b4e3c72c5c8e7dc373abb0d94562cfaee244349db05697015d105483341",
+            "params": [
+                "validateFullModel",
+                "disable_validation"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::searchBase": {
+            "fingerprint": "eb68c933c61b8cfb7db2875eb46306208ce8d99b25d49867ba3785cba7760419",
+            "params": [
+                "path",
+                "fields",
+                "defaultSort",
+                "filter_funct",
+                "sort_flags"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::setAction": {
+            "fingerprint": "fdfa2bf7090f7480b9ca71fc79323288e827513cb1c9e698de512fc7896723ee",
+            "params": []
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::setBase": {
+            "fingerprint": "114fd1454997cc253970f0bc29edcbd9f56e8412732b90f1a8237ee57441f97e",
+            "params": [
+                "post_field",
+                "path",
+                "uuid",
+                "overlay"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::toggleBase": {
+            "fingerprint": "289ac9e95d16be451fd2e5e46bba5e0264d576e6da6e3eacd7419238b9189c16",
+            "params": [
+                "path",
+                "uuids",
+                "enabled"
+            ]
+        },
+        "OPNsense\\Base\\ApiMutableModelControllerBase::validate": {
+            "fingerprint": "01285cccdeae2d51eeb93b0e335f245e8fccda51eacefcce42fbc15f506b210a",
+            "params": [
+                "node",
+                "prefix",
+                "validateFullModel"
+            ]
+        },
+        "OPNsense\\Base\\FieldTypes\\BaseField::getNodeData": {
+            "fingerprint": "04bd64a3013e1480be48197d9ab8ed75424ed17e55ba17354b71dfd69a20208c",
+            "params": []
+        },
+        "OPNsense\\Base\\FieldTypes\\BaseField::getNodes": {
+            "fingerprint": "07672b1ab000f2ddeb307c65bf8a6254703297a280fd75d744a28ea75184afba",
+            "params": []
+        },
+        "OPNsense\\Base\\FieldTypes\\BaseListField::getValues": {
+            "fingerprint": "b71e18a9aece2df3f702a907689029e2af188bbd676fa46772ca6e6a0c64338e",
+            "params": []
+        },
+        "OPNsense\\Base\\FieldTypes\\BaseListField::setValues": {
+            "fingerprint": "820c91a2ce237136a4722d3f82939aa0e42cea1c385d11788095d09f5ee5259e",
+            "params": [
+                "values"
+            ]
+        },
+        "OPNsense\\Base\\UIModelGrid::fetch": {
+            "fingerprint": "c2aa54b6a2ff65f9ccf3938dc43ccd8186fbaac202215564b999fd04468b4d8f",
+            "params": [
+                "fields",
+                "itemsPerPage",
+                "currentPage",
+                "sortBy",
+                "sortDescending",
+                "search_tokens",
+                "filter_funct",
+                "sort_flags"
+            ]
+        },
+        "OPNsense\\Firewall\\Api\\FilterBaseController::downloadRulesBase": {
+            "fingerprint": "f0ad30939b4a46fe39d209166b3277ca101dc2facf144fefacd907e2bc686ebe",
+            "params": [
+                "node_reference",
+                "ignore_fields",
+                "alias_fields"
+            ]
+        },
+        "OPNsense\\Firewall\\Api\\FilterBaseController::moveRuleBeforeBase": {
+            "fingerprint": "aeeaef61bef7eb3ecc0402d9417b48a193ab5f279b71c26fea6608e64ecbffdf",
+            "params": [
+                "selected_uuid",
+                "target_uuid",
+                "node_reference",
+                "sort_key"
+            ]
+        },
+        "OPNsense\\Firewall\\Api\\FilterBaseController::toggleRuleLogBase": {
+            "fingerprint": "971920c0e606e74bdadd7294e744410ae47d5bfc92e7b2795cbc04d0318ef589",
+            "params": [
+                "uuid",
+                "log",
+                "node_reference"
+            ]
+        },
+        "OPNsense\\Firewall\\Api\\FilterBaseController::uploadRulesBase": {
+            "fingerprint": "d92d54340810e35af61cf4468a2e2b309d89a001752e72f1711726c33287e6d8",
+            "params": [
+                "node_reference",
+                "ignored_fields",
+                "alias_fields"
+            ]
+        }
+    }
+}

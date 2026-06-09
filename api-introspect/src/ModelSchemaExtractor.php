@@ -19,12 +19,68 @@ final class ModelSchemaExtractor
     /** Guard against pathological / self-referential nesting. */
     private const MAX_DEPTH = 6;
 
+    /** @var array<string, object|false> instantiated model cache keyed by class */
+    private array $modelCache = [];
+
+    /**
+     * Resolve the body field set for an explicit model path (as recovered from a
+     * parsed `getBase()/setBase()` call), independent of the controller's
+     * categorysource heuristic. Returns null when the path does not resolve to
+     * an array collection (caller should keep its default payload).
+     *
+     * @return array{0:string,1:array<int,array<string,mixed>>}|null [key, fields]
+     */
+    public function fieldsForPath(string $modelClass, string $path): ?array
+    {
+        $model = $this->modelInstance($modelClass);
+        if ($model === null) {
+            return null;
+        }
+        $node = $this->navigate($model, $path);
+        if ($node === null || !$this->callBool($node, 'isArrayType') || !method_exists($node, 'getTemplateNode')) {
+            return null;
+        }
+        try {
+            $template = $node->getTemplateNode();
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!is_object($template)) {
+            return null;
+        }
+        $segments = explode('.', $path);
+        return [end($segments) ?: $path, $this->walk($template, 0)];
+    }
+
+    /**
+     * Whole-model field set: the body of the inherited base get/setAction, which
+     * serialise the entire model node tree (getNodes()) under internalModelName
+     * rather than a single collection row. Reuses the model cache.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function wholeModelFields(string $modelClass): array
+    {
+        $model = $this->modelInstance($modelClass);
+        return $model === null ? [] : $this->walk($model, 0);
+    }
+
+    private function modelInstance(string $modelClass): ?object
+    {
+        if (!array_key_exists($modelClass, $this->modelCache)) {
+            try {
+                $this->modelCache[$modelClass] = (new \ReflectionClass($modelClass))->newInstance();
+            } catch (\Throwable) {
+                $this->modelCache[$modelClass] = false;
+            }
+        }
+        return $this->modelCache[$modelClass] ?: null;
+    }
+
     /**
      * @return array{
-     *   model:?string, bodyKey:?string, categorysource:?string,
-     *   payloadKey:?string, payload:array<int,array<string,mixed>>,
-     *   fields:array<int,array<string,mixed>>, error:?string,
-     *   options_runtime:bool
+     *   model:?string, bodyKey:?string,
+     *   payloadKey:?string, payload:array<int,array<string,mixed>>
      * }
      */
     public function extract(DiscoveredController $controller): array
@@ -32,12 +88,8 @@ final class ModelSchemaExtractor
         $result = [
             'model' => null,
             'bodyKey' => null,
-            'categorysource' => $controller->staticProp('categorysource'),
             'payloadKey' => null,
             'payload' => [],
-            'fields' => [],
-            'error' => null,
-            'options_runtime' => false,
         ];
 
         $modelClass = null;
@@ -49,32 +101,29 @@ final class ModelSchemaExtractor
         }
 
         if (!is_string($modelClass) || $modelClass === '' || !class_exists($modelClass)) {
-            $result['error'] = 'no model class';
             return $result;
         }
         $result['model'] = $modelClass;
 
         // Some models reach out to configd during construction; degrade
         // gracefully when it is unavailable (option enums become empty).
-        try {
-            $model = (new \ReflectionClass($modelClass))->newInstance();
-        } catch (\Throwable $e) {
-            $result['error'] = 'instantiation failed: ' . $e->getMessage();
+        $model = $this->modelInstance($modelClass);
+        if ($model === null) {
             return $result;
         }
 
         try {
             // __get on the model reflects to its root ContainerField, so
             // iterateItems() yields the top-level field nodes.
-            $result['fields'] = $this->walk($model, 0, $result);
+            $fields = $this->walk($model, 0);
             [$result['payloadKey'], $result['payload']] = $this->computePayload(
                 $model,
-                $result['categorysource'],
+                $controller->staticProp('categorysource'),
                 $result['bodyKey'],
-                $result
+                $fields
             );
-        } catch (\Throwable $e) {
-            $result['error'] = 'field walk failed: ' . $e->getMessage();
+        } catch (\Throwable) {
+            // Leave payload empty; the emitter falls back to a generic body.
         }
 
         return $result;
@@ -92,10 +141,10 @@ final class ModelSchemaExtractor
      * collection and the key is the model name. Settings-style models (no array
      * collection) expose the whole model under the model name.
      *
-     * @param array{options_runtime:bool} $result by-ref accumulator for flags
+     * @param array<int,array<string,mixed>> $fields top-level field set (whole-model body)
      * @return array{0:?string,1:array<int,array<string,mixed>>} [payloadKey, fields]
      */
-    private function computePayload(object $model, ?string $categorysource, ?string $bodyKey, array &$result): array
+    private function computePayload(object $model, ?string $categorysource, ?string $bodyKey, array $fields): array
     {
         $path = $categorysource ?: null;
         $node = null;
@@ -122,7 +171,7 @@ final class ModelSchemaExtractor
             try {
                 $template = $node->getTemplateNode();
                 if (is_object($template)) {
-                    return [$key, $this->walk($template, 0, $result)];
+                    return [$key, $this->walk($template, 0)];
                 }
             } catch (\Throwable) {
                 // fall through to whole-model view
@@ -130,7 +179,7 @@ final class ModelSchemaExtractor
         }
 
         // Settings-style model: the whole model is the body.
-        return [$bodyKey, $result['fields']];
+        return [$bodyKey, $fields];
     }
 
     /** Navigate a dotted model path via __get; null if any step is missing. */
@@ -156,10 +205,9 @@ final class ModelSchemaExtractor
      * flattened; ArrayField collections become a single entry carrying the
      * row schema under `items`.
      *
-     * @param array{options_runtime:bool} $result by-ref accumulator for flags
      * @return array<int,array<string,mixed>>
      */
-    private function walk(object $container, int $depth, array &$result): array
+    private function walk(object $container, int $depth): array
     {
         $fields = [];
         if ($depth > self::MAX_DEPTH) {
@@ -172,31 +220,26 @@ final class ModelSchemaExtractor
             }
 
             if ($this->callBool($child, 'isArrayType')) {
-                $fields[] = $this->describeArray((string)$name, $child, $depth, $result);
+                $fields[] = $this->describeArray((string)$name, $child, $depth);
             } elseif ($this->callBool($child, 'isContainer')) {
                 // Grouping container (e.g. "general", "rules"): flatten its
                 // children up into this level.
-                foreach ($this->walk($child, $depth + 1, $result) as $f) {
+                foreach ($this->walk($child, $depth + 1) as $f) {
                     $fields[] = $f;
                 }
             } else {
-                $fields[] = $this->describeField((string)$name, $child, $result);
+                $fields[] = $this->describeField((string)$name, $child);
             }
         }
 
         return $fields;
     }
 
-    /**
-     * @param array{options_runtime:bool} $result
-     * @return array<string,mixed>
-     */
-    private function describeArray(string $name, object $field, int $depth, array &$result): array
+    /** @return array<string,mixed> */
+    private function describeArray(string $name, object $field, int $depth): array
     {
         $entry = [
             'name' => $name,
-            'reference' => $this->reference($field),
-            'type' => (new \ReflectionClass($field))->getShortName(),
             'array' => true,
             'items' => [],
         ];
@@ -205,21 +248,18 @@ final class ModelSchemaExtractor
             try {
                 $template = $field->getTemplateNode();
                 if (is_object($template)) {
-                    $entry['items'] = $this->walk($template, $depth + 1, $result);
+                    $entry['items'] = $this->walk($template, $depth + 1);
                 }
-            } catch (\Throwable $e) {
-                $entry['items_error'] = $e->getMessage();
+            } catch (\Throwable) {
+                // No template available; emit the collection with empty items.
             }
         }
 
         return $entry;
     }
 
-    /**
-     * @param array{options_runtime:bool} $result
-     * @return array<string,mixed>
-     */
-    private function describeField(string $name, object $field, array &$result): array
+    /** @return array<string,mixed> */
+    private function describeField(string $name, object $field): array
     {
         // How the field serializes in getNodes(): a scalar string, or an
         // option map {key => {value, selected}}. This drives the request vs
@@ -229,39 +269,19 @@ final class ModelSchemaExtractor
 
         $entry = [
             'name' => $name,
-            'reference' => $this->reference($field),
             'type' => (new \ReflectionClass($field))->getShortName(),
             'required' => $this->callBool($field, 'isRequired'),
             'array' => false,
             'valueType' => $valueType,
             'multiSelect' => (bool)$this->internalProp($field, 'internalMultiSelect'),
             'description' => $this->callString($field, 'getDescription'),
-            'default' => $this->internalDefault($field),
-            'validators' => $this->validators($field),
-            'validationMessage' => $this->internalProp($field, 'internalValidationMessage'),
         ];
 
         if ($valueType === 'map') {
-            $options = array_keys($nodeData);
-            $entry['options'] = $options;
-            if ($options === []) {
-                $entry['options_runtime'] = true;
-                $result['options_runtime'] = true;
-            }
+            $entry['options'] = array_keys($nodeData);
         }
 
         return $entry;
-    }
-
-    private function reference(object $field): ?string
-    {
-        foreach (['internalReference', '__reference'] as $candidate) {
-            $v = $this->internalProp($field, $candidate);
-            if (is_string($v) && $v !== '') {
-                return $v;
-            }
-        }
-        return null;
     }
 
     /**
@@ -278,35 +298,6 @@ final class ModelSchemaExtractor
         } catch (\Throwable) {
             return '';
         }
-    }
-
-    /** @return string[] short class names of attached validators */
-    private function validators(object $field): array
-    {
-        if (!method_exists($field, 'getValidators')) {
-            return [];
-        }
-        try {
-            $validators = $field->getValidators();
-        } catch (\Throwable) {
-            return [];
-        }
-        $names = [];
-        foreach ((array)$validators as $v) {
-            if (is_object($v)) {
-                $names[] = (new \ReflectionClass($v))->getShortName();
-            }
-        }
-        return array_values(array_unique($names));
-    }
-
-    private function internalDefault(object $field): mixed
-    {
-        $v = $this->internalProp($field, 'internalValue');
-        if ($v !== null && $v !== '') {
-            return $v;
-        }
-        return $this->internalProp($field, 'internalDefaultValue');
     }
 
     private function internalProp(object $field, string $name): mixed

@@ -10,7 +10,6 @@ final class DiscoveredController
      */
     public function __construct(
         public readonly string $fqcn,
-        public readonly string $vendor,
         public readonly string $module,
         public readonly string $shortName,
         public readonly string $kind,
