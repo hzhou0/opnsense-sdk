@@ -28,8 +28,13 @@ final class OpenApiEmitter
         $paths = [];
         foreach ($endpoints as $ep) {
             $path = $ep['path'];
+            $multiVerb = count($ep['verbs']) > 1;
             foreach ($ep['verbs'] as $verb) {
-                $paths[$path][strtolower($verb)] = $this->operation($ep);
+                $opEp = $ep;
+                if ($multiVerb && isset($opEp['operationId'])) {
+                    $opEp['operationId'] = $opEp['operationId'] . '.' . strtoupper($verb);
+                }
+                $paths[$path][strtolower($verb)] = $this->operation($opEp);
             }
         }
 

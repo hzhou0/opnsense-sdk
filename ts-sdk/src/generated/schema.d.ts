@@ -395,9 +395,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["CaptivePortal.AccessController.statusAction"];
+        get: operations["CaptivePortal.AccessController.statusAction.GET"];
         put?: never;
-        post: operations["CaptivePortal.AccessController.statusAction"];
+        post: operations["CaptivePortal.AccessController.statusAction.POST"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4795,9 +4795,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["Firewall.AliasController.exportAction"];
+        get: operations["Firewall.AliasController.exportAction.GET"];
         put?: never;
-        post: operations["Firewall.AliasController.exportAction"];
+        post: operations["Firewall.AliasController.exportAction.POST"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16910,7 +16910,7 @@ export interface operations {
             };
         };
     };
-    "CaptivePortal.AccessController.statusAction": {
+    "CaptivePortal.AccessController.statusAction.GET": {
         parameters: {
             query?: never;
             header?: never;
@@ -16932,7 +16932,7 @@ export interface operations {
             };
         };
     };
-    "CaptivePortal.AccessController.statusAction": {
+    "CaptivePortal.AccessController.statusAction.POST": {
         parameters: {
             query?: never;
             header?: never;
@@ -26692,7 +26692,7 @@ export interface operations {
             };
         };
     };
-    "Firewall.AliasController.exportAction": {
+    "Firewall.AliasController.exportAction.GET": {
         parameters: {
             query?: never;
             header?: never;
@@ -26783,7 +26783,7 @@ export interface operations {
             };
         };
     };
-    "Firewall.AliasController.exportAction": {
+    "Firewall.AliasController.exportAction.POST": {
         parameters: {
             query?: never;
             header?: never;
@@ -29730,7 +29730,7 @@ export interface operations {
                         "max-src-conn-rate"?: string;
                         "max-src-conn-rates"?: string;
                         /** @enum {string} */
-                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot";
+                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot" | "__lan_network" | "__opt1_network" | "__wan_network";
                         adaptivestart?: string;
                         adaptiveend?: string;
                         /** @enum {string} */
@@ -31369,7 +31369,7 @@ export interface operations {
                         "max-src-conn-rate"?: string;
                         "max-src-conn-rates"?: string;
                         /** @enum {string} */
-                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot";
+                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot" | "__lan_network" | "__opt1_network" | "__wan_network";
                         adaptivestart?: string;
                         adaptiveend?: string;
                         /** @enum {string} */
@@ -31671,7 +31671,7 @@ export interface operations {
                         "max-src-conn-rate"?: string;
                         "max-src-conn-rates"?: string;
                         /** @enum {string} */
-                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot";
+                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot" | "__lan_network" | "__opt1_network" | "__wan_network";
                         adaptivestart?: string;
                         adaptiveend?: string;
                         /** @enum {string} */
@@ -31835,7 +31835,7 @@ export interface operations {
                         "max-src-conn-rate"?: string;
                         "max-src-conn-rates"?: string;
                         /** @enum {string} */
-                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot";
+                        overload?: "" | "bogons" | "bogonsv6" | "sshlockout" | "virusprot" | "__lan_network" | "__opt1_network" | "__wan_network";
                         adaptivestart?: string;
                         adaptiveend?: string;
                         /** @enum {string} */
