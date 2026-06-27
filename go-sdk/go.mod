@@ -1,4 +1,4 @@
-module opnsense-sdk/go-sdk
+module github.com/hzhou0/opnsense-sdk/go-sdk
 
 go 1.22
 

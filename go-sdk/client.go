@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"opnsense-sdk/go-sdk/generated"
+	"github.com/hzhou0/opnsense-sdk/go-sdk/generated"
 )
 
 // Options configures the OPNsense API client.
